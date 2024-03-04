@@ -10,7 +10,6 @@ echo $b-$a;
 
 function pgnToCsvPartite($filePath, $destDir, $id=1){
     $fileName = basename($filePath);
-    $fileDate = str_replace("-","",substr($fileName,26,7));
     $handle = fopen($filePath, "r");
 
     $f1 = fopen($destDir."/partite_".$fileName, 'w');
@@ -25,7 +24,7 @@ function pgnToCsvPartite($filePath, $destDir, $id=1){
         if (strpos($line,'[')!==0){$game->setMoves($game->getMoves() ? $game->getMoves() . " " . $line : $line);}
         else{
             if ($game->haveMoves()){
-                fputcsv($f1, array($id, $fileDate, $game->getIdType(), $game->getWhite(), $game->getBlack(), $game->getTimeControl(), $game->getIdResult(), $game->getIdTermination(), $game->getDateTime(), $game->getWhiteElo(), $game->getBlackElo(), cleanLine($game->getMoves())));
+                fputcsv($f1, array($id, $game->getIdType(), $game->getWhite(), $game->getBlack(), $game->getTimeControl(), $game->getIdResult(), $game->getIdTermination(), $game->getDateTime(), $game->getWhiteElo(), $game->getBlackElo(), cleanLine($game->getMoves())));
                 
                 $game = new Game();
                 $id++;
@@ -52,7 +51,7 @@ function pgnToCsvPartite($filePath, $destDir, $id=1){
         }
     }
 
-    fputcsv($f1, array($id, $fileDate, $game->getIdType(), $game->getWhite(), $game->getBlack(), $game->getTimeControl(), $game->getIdResult(), $game->getIdTermination(), $game->getDateTime(), $game->getWhiteElo(), $game->getBlackElo(), cleanLine($game->getMoves())));
+    fputcsv($f1, array($id, $game->getIdType(), $game->getWhite(), $game->getBlack(), $game->getTimeControl(), $game->getIdResult(), $game->getIdTermination(), $game->getDateTime(), $game->getWhiteElo(), $game->getBlackElo(), cleanLine($game->getMoves())));
     
     fclose($f1);
     fclose($handle);

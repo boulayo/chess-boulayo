@@ -12,42 +12,42 @@ function parseLine($line){
 	return array($cleanedLine, $annotations);
 }
 
+function parseLineLight($line){
+	$cleanedLine = null;
+	$annotationDepth = 0;
+	foreach (str_split($line) as $char){
+		if ($char=="{" || $char=="(") {$annotationDepth++;}
+		if ($annotationDepth==0){$cleanedLine .= $char;}
+		if ($char=="}" || $char==")") {$annotationDepth--;}
+	}
+	return $cleanedLine;
+}
+
 function justEvaluations($annotations){
-    $annotations = str_ireplace("}{", "}||{", $annotations);
-    $annotations = str_ireplace("] [", "}!!{", $annotations);
-    $annotations = str_ireplace("{", "", $annotations);
-    $annotations = str_ireplace("}", "", $annotations);
-    $annotations = str_ireplace("[", "", $annotations);
-    $annotations = str_ireplace("]", "", $annotations);
+	$annotations = str_replace(array("}{","] [","{","}","[","]"),array("}||{","}!!{","","","",""),$annotations);
     $annotations = explode("||", $annotations);
     foreach ($annotations as $k=>$v){$annotations[$k] = explode("!!", $v);}
-    for ($i=0; $i<count($annotations); $i++) { 
-        if (strpos($annotations[$i][0], "eval")===false){$annotations[$i][0] = "";}
-        if (isset($annotations[$i][1])){
-            if (strpos($annotations[$i][1], "eval")!==false){$annotations[$i][0] = $annotations[$i][1];}
-            unset($annotations[$i][1]);
-        }
-		$annotations[$i][0] = str_replace(array("%","eval"," "), array("","",""), $annotations[$i][0]);
-    }
-    return $annotations;
+    
+	$evaluations = array();
+	for ($i=0; $i<count($annotations); $i++) {foreach ($annotations[$i] as $k=>$v){if (strpos($v, "eval")!==false){$evaluations[$i] = str_replace(array("%","eval"," "),"",$v); break;} $evaluations[$i] = "";}}
+    return $evaluations;
 }
 
 
 function cleanLine($line, $compress=0, $numMoves=150){
-	$parsedLine = parseLine($line);
-	$line = $parsedLine[0];
-	$annotations = $parsedLine[1];
-	
 	$evaluations = array();
-	if (strpos($annotations, "eval")!==false){$evaluations = justEvaluations($annotations);}
-	
-	$line = str_replace("..", "", $line); //TOLGO I DUE PUNTINI PRIMA DELLE MOSSE DEL NERO
-	$line = preg_replace("/(1-0|0-1|1\/2-1\/2|\*)$/", "", $line); //TOLGO IL RISULTATO FINALE
-	$line = str_replace("!","",str_replace("?","",$line)); //TOLGO LA CRITICA
-	$line = preg_replace('/\d+\.\s/', '', $line); //TOLGO I NUMERI DI SEMIMOSSA
-	$line = trim(preg_replace('/\s{2,}/', ' ', $line)); //RIMUOVI SPAZI IN ECCESSO
+	if (strpos($line, "eval")===false){$line = parseLineLight($line);}
+	else{
+		$parsedLine = parseLine($line);
+		$line = $parsedLine[0];
+		$evaluations = justEvaluations($parsedLine[1]);
+	}
+
+	$line = str_replace(array("..","?","!"),"",$line); //RIMUOVO I DUE PUNTINI PRIMA DELLE MOSSE DEL NERO E LA CRITICA
+	$line = preg_replace(array("/(1-0|0-1|1\/2-1\/2|\*)$/","/\d+\.\s/"), "", $line); //TOLGO IL RISULTATO FINALE E I NUMERI DI SEMIMOSSA
+	$line = trim(preg_replace("/\s{2,}/", " ", $line)); //RIMUOVO GLI SPAZI IN ECCESSO
 	$halfmoves = explode(" ", $line);
-	if (count($evaluations)>=count($halfmoves)-1 && count($halfmoves)>1){$line = ""; foreach ($halfmoves as $k=>$v){if ($compress==1 && $k>=$numMoves){break;} $line .= $v." {".(isset($evaluations[$k][0]) ? trim($evaluations[$k][0]) : "")."} ";}}
+	if (count($evaluations)>=count($halfmoves)-1 && count($halfmoves)>1){$line = ""; foreach ($halfmoves as $k=>$v){if ($compress==1 && $k>=$numMoves){break;} $line .= $v." {".(isset($evaluations[$k]) ? trim($evaluations[$k]) : "")."} ";}}
 	else{$line = ""; foreach ($halfmoves as $k=>$v){if ($compress==1 && $k>=$numMoves){break;} $line .= $v." ";}}
 	return trim($line);
 }
